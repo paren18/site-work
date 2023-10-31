@@ -1,0 +1,55 @@
+public function validate() {
+		$valid = true;
+		$this->errors = array();
+		$this->data = array();
+		foreach ($this->fields as $key => $item){
+			$messages = $item->field->validate();
+			if (!empty($messages)){
+				$valid = false;
+				$this->fieldsErrors[$item->field->getName()] = $item->field->getName();
+				$this->errors = array_merge($this->errors,$messages);
+			}
+			$this->fields[$key]->field = $item->field;
+			$value = $item->field->getValue();
+			$this->data[] = array(
+				'title' => $item->title,
+				'value' => $value,
+			);
+
+			if(in_array($item->field->title, ['Имя','Ваше имя']) && !empty($value)){
+				if(preg_match('/[a-zA-Z]/', $value)){
+					$this->errors[$item->field->getName()] = new Message('Не поддерживаются английские имена','error');
+					$valid = false;
+				}
+			}
+			if($item->field->title == 'Комментарий' && !empty($value)){
+				if(preg_match('/(оптимизация|конверсия|база данных|рассылка|рассылки|рассылок|подписку|под0писки|посещаемость|доходность|wildberries|вайлдберриз|озон|ozon|сбермегамаркет)/i', $value)){
+					$this->errors[$item->field->getName()] = new Message('Присутствует запрещенное слово','error');
+					$valid = false;
+				}
+			}
+			if($item->field->title =='Комментарий' && !empty($value)){
+				if(preg_match('/\b(?:https?|ftp):\/\/\S+/i', $value)){
+					$this->errors[$item->field->getName()] = new Message('Присутствует ссылка','error');
+					$valid = false;
+				}
+			}
+
+
+			if ($item->field->type == "tel" && !empty($value)) {
+				$plusSeven = substr($value, 0, 2);
+				if ($plusSeven != '+7') {
+					$this->fieldsErrors[$item->field->getName()] = $item->field->getName();
+					$this->errors[$item->field->getName()] = new Message('Введите номер телефона соответствующий маске','error');
+					$valid = false;
+				}
+			}
+
+			if(!empty($value) && (strpos($value, 'http') !== false)){
+				$this->fieldsErrors[$item->field->getName()] = $item->field->getName();
+				$this->errors[$item->field->getName()] = new Message('Некоректные символы в строке','error');
+				$valid = false;
+			}
+		}
+		return $valid;
+	}
